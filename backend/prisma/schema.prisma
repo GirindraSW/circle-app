@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  full_name     String
+  email         String   @unique
+  password      String
+  photo_profile String?
+  bio           String?
+  created_at    DateTime @default(now())
+  created_by    String?
+  updated_at    DateTime @updatedAt
+  updated_by    String?
+
+  created_by_user User?  @relation("UsersCreatedBy", fields: [created_by], references: [id])
+  updated_by_user User?  @relation("UsersUpdatedBy", fields: [updated_by], references: [id])
+  users_created   User[] @relation("UsersCreatedBy")
+  users_updated   User[] @relation("UsersUpdatedBy")
+
+  following Following[] @relation("FollowingTarget")
+  followers Following[] @relation("FollowingSource")
+
+  threads_created_by Thread[] @relation("ThreadsCreatedBy")
+  threads_updated_by Thread[] @relation("ThreadsUpdatedBy")
+  replies_user       Reply[]  @relation("RepliesUser")
+  replies_created_by Reply[]  @relation("RepliesCreatedBy")
+  replies_updated_by Reply[]  @relation("RepliesUpdatedBy")
+  likes_user         Like[]   @relation("LikesUser")
+  likes_created_by   Like[]   @relation("LikesCreatedBy")
+  likes_updated_by   Like[]   @relation("LikesUpdatedBy")
+
+  @@map("users")
+}
+
+model Following {
+  id           String   @id @default(uuid())
+  following_id String
+  follower_id  String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  following User @relation("FollowingTarget", fields: [following_id], references: [id])
+  follower  User @relation("FollowingSource", fields: [follower_id], references: [id])
+
+  @@unique([following_id, follower_id])
+  @@map("following")
+}
+
+model Thread {
+  id                String   @id @default(uuid())
+  content           String
+  image             String?
+  number_of_replies Int      @default(0)
+  created_at        DateTime @default(now())
+  created_by        String?
+  updated_at        DateTime @updatedAt
+  updated_by        String?
+
+  created_by_user User?   @relation("ThreadsCreatedBy", fields: [created_by], references: [id])
+  updated_by_user User?   @relation("ThreadsUpdatedBy", fields: [updated_by], references: [id])
+  replies         Reply[]
+  likes           Like[]
+
+  @@map("threads")
+}
+
+model Reply {
+  id         String   @id @default(uuid())
+  user_id    String
+  thread_id  String
+  image      String?
+  content    String
+  created_at DateTime @default(now())
+  created_by String?
+  updated_at DateTime @updatedAt
+  updated_by String?
+
+  user            User   @relation("RepliesUser", fields: [user_id], references: [id])
+  thread          Thread @relation(fields: [thread_id], references: [id])
+  created_by_user User?  @relation("RepliesCreatedBy", fields: [created_by], references: [id])
+  updated_by_user User?  @relation("RepliesUpdatedBy", fields: [updated_by], references: [id])
+
+  @@map("replies")
+}
+
+model Like {
+  id         String   @id @default(uuid())
+  user_id    String
+  thread_id  String
+  created_at DateTime @default(now())
+  created_by String?
+  updated_at DateTime @updatedAt
+  updated_by String?
+
+  user            User   @relation("LikesUser", fields: [user_id], references: [id])
+  thread          Thread @relation(fields: [thread_id], references: [id])
+  created_by_user User?  @relation("LikesCreatedBy", fields: [created_by], references: [id])
+  updated_by_user User?  @relation("LikesUpdatedBy", fields: [updated_by], references: [id])
+
+  @@unique([user_id, thread_id])
+  @@map("likes")
+}
