@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { getThreadsRequest } from "../services/threadService";
+import {
+  createThreadRequest,
+  getThreadsRequest,
+  type ThreadApiItem,
+} from "../services/threadService";
 import type { ThreadItem } from "../types/thread.type";
 
 const DUMMY_THREADS: ThreadItem[] = [
@@ -43,24 +47,16 @@ const DUMMY_THREADS: ThreadItem[] = [
 export function useThreads() {
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isPosting, setIsPosting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
     const loadThreads = async () => {
       try {
         const result = await getThreadsRequest();
-        const mappedThreads: ThreadItem[] = result.data.map((thread) => ({
-          id: thread.id,
-          authorName: thread.author.name,
-          authorUsername: thread.author.username,
-          authorAvatar: thread.author.avatar || "https://i.pravatar.cc/100?img=3",
-          content: thread.content,
-          image: thread.image || undefined,
-          createdAtLabel: formatThreadDate(thread.createdAt),
-          likeCount: thread.likeCount,
-          replyCount: thread.replyCount,
-          liked: thread.liked,
-        }));
+        const mappedThreads: ThreadItem[] = result.data.map((thread) =>
+          mapThreadFromApi(thread),
+        );
 
         setThreads(mappedThreads);
       } catch {
@@ -72,6 +68,40 @@ export function useThreads() {
     };
 
     loadThreads();
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const wsBaseUrl = (import.meta.env.VITE_WS_URL || "ws://localhost:5000").replace(
+      /\/$/,
+      "",
+    );
+    const socket = new WebSocket(`${wsBaseUrl}/ws?token=${encodeURIComponent(token)}`);
+
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as {
+          event: string;
+          data: ThreadApiItem;
+        };
+
+        if (payload.event !== "thread:created") return;
+
+        const mapped = mapThreadFromApi(payload.data);
+        setThreads((prev) => {
+          if (prev.some((item) => item.id === mapped.id)) return prev;
+          return [mapped, ...prev];
+        });
+      } catch {
+        // Ignore malformed WS payload.
+      }
+    };
+
+    return () => {
+      socket.close();
+    };
   }, []);
 
   const toggleLike = (threadId: string) => {
@@ -88,7 +118,29 @@ export function useThreads() {
     );
   };
 
-  return { threads, isLoading, toggleLike, errorMessage };
+  const createThread = async (content: string, imageFile?: File | null) => {
+    const formData = new FormData();
+    formData.append("content", content);
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    setIsPosting(true);
+    setErrorMessage("");
+
+    try {
+      const result = await createThreadRequest(formData);
+      const mapped = mapThreadFromApi(result.data);
+      setThreads((prev) => [mapped, ...prev]);
+    } catch (error) {
+      setErrorMessage("Gagal membuat thread.");
+      throw error;
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  return { threads, isLoading, isPosting, toggleLike, createThread, errorMessage };
 }
 
 const formatThreadDate = (value: string) => {
@@ -106,3 +158,16 @@ const formatThreadDate = (value: string) => {
     day: "numeric",
   });
 };
+
+const mapThreadFromApi = (thread: ThreadApiItem): ThreadItem => ({
+  id: thread.id,
+  authorName: thread.author.name,
+  authorUsername: thread.author.username,
+  authorAvatar: thread.author.avatar || "https://i.pravatar.cc/100?img=3",
+  content: thread.content,
+  image: thread.image || undefined,
+  createdAtLabel: formatThreadDate(thread.createdAt),
+  likeCount: thread.likeCount,
+  replyCount: thread.replyCount,
+  liked: thread.liked,
+});

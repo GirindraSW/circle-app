@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ThreadDetailPage from "./pages/ThreadDetailPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import "./App.css";
 
@@ -16,6 +17,14 @@ function App() {
         element={
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/thread/:threadId"
+        element={
+          <ProtectedRoute>
+            <ThreadDetailPage />
           </ProtectedRoute>
         }
       />

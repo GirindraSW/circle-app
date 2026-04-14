@@ -6,11 +6,15 @@ import type { ThreadItem } from "../types/thread.type";
 type ThreadCardProps = {
   thread: ThreadItem;
   onToggleLike: (threadId: string) => void;
+  onClick?: (threadId: string) => void;
 };
 
-export default function ThreadCard({ thread, onToggleLike }: ThreadCardProps) {
+export default function ThreadCard({ thread, onToggleLike, onClick }: ThreadCardProps) {
   return (
-    <Card className="gap-3 rounded-2xl border-zinc-800 bg-zinc-950/80 text-zinc-100">
+    <Card
+      className="cursor-pointer gap-3 rounded-2xl border-zinc-800 bg-zinc-950/80 text-zinc-100"
+      onClick={() => onClick?.(thread.id)}
+    >
       <CardHeader className="flex flex-row items-start gap-3">
         <img
           src={thread.authorAvatar}
@@ -20,7 +24,7 @@ export default function ThreadCard({ thread, onToggleLike }: ThreadCardProps) {
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{thread.authorName}</p>
           <p className="text-xs text-zinc-400">
-            @{thread.authorUsername} • {thread.createdAtLabel}
+            @{thread.authorUsername} - {thread.createdAtLabel}
           </p>
         </div>
       </CardHeader>
@@ -43,7 +47,10 @@ export default function ThreadCard({ thread, onToggleLike }: ThreadCardProps) {
                 ? "bg-green-600 text-white hover:bg-green-500"
                 : "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
             }
-            onClick={() => onToggleLike(thread.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleLike(thread.id);
+            }}
             type="button"
           >
             <Heart className="h-4 w-4" />
