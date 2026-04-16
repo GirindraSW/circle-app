@@ -1,11 +1,40 @@
 import { ArrowLeft, Heart, MessageCircle } from "lucide-react";
+import { FormEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useThreadDetail } from "@/features/thread/hooks/useThreadDetail";
 
 export default function ThreadDetailPage() {
   const { threadId } = useParams<{ threadId: string }>();
-  const { thread, replies, isLoading, errorMessage } = useThreadDetail(threadId);
+  const {
+    thread,
+    replies,
+    isLoading,
+    isReplySubmitting,
+    errorMessage,
+    submitReply,
+    toggleLike,
+    likeState,
+  } = useThreadDetail(threadId);
+  const [replyContent, setReplyContent] = useState("");
+  const [replyImage, setReplyImage] = useState<File | null>(null);
+
+  const handleReplySubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!replyContent.trim() && !replyImage) return;
+
+    try {
+      await submitReply(replyContent.trim(), replyImage);
+      setReplyContent("");
+      setReplyImage(null);
+    } catch {
+      // handled in hook
+    }
+  };
+
+  const liked = likeState?.liked ?? thread?.liked ?? false;
+  const likes = likeState?.likeCount ?? thread?.likes ?? 0;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -56,10 +85,20 @@ export default function ThreadDetailPage() {
               ) : null}
               <p className="text-xs text-zinc-500">{thread.createdAtLabel}</p>
               <div className="flex items-center gap-4 text-sm text-zinc-300">
-                <span className="inline-flex items-center gap-1">
+                <Button
+                  variant={liked ? "default" : "outline"}
+                  size="sm"
+                  className={
+                    liked
+                      ? "bg-green-600 text-white hover:bg-green-500"
+                      : "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+                  }
+                  onClick={() => void toggleLike()}
+                  type="button"
+                >
                   <Heart className="h-4 w-4" />
-                  {thread.likes}
-                </span>
+                  {likes}
+                </Button>
                 <span className="inline-flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
                   {thread.replies}
@@ -68,6 +107,34 @@ export default function ThreadDetailPage() {
             </CardContent>
           </Card>
         ) : null}
+
+        <form
+          onSubmit={handleReplySubmit}
+          className="mb-4 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4"
+        >
+          <textarea
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            rows={3}
+            placeholder="Type your reply..."
+            className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setReplyImage(e.target.files?.[0] || null)}
+              className="text-xs text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-2 file:text-white"
+            />
+            <Button
+              type="submit"
+              disabled={isReplySubmitting}
+              className="rounded-full bg-green-600 text-white hover:bg-green-500"
+            >
+              {isReplySubmitting ? "Replying..." : "Reply"}
+            </Button>
+          </div>
+        </form>
 
         <section className="space-y-3">
           {replies.map((reply) => (
@@ -84,7 +151,7 @@ export default function ThreadDetailPage() {
                 <div>
                   <p className="text-sm font-semibold">{reply.user.name}</p>
                   <p className="text-xs text-zinc-400">
-                    @{reply.user.username} • {reply.createdAtLabel}
+                    @{reply.user.username} - {reply.createdAtLabel}
                   </p>
                 </div>
               </CardHeader>

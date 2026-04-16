@@ -1,9 +1,14 @@
-import { broadcastThreadCreated } from "../../realtime/ws.js";
+import { broadcastReplyCreated, broadcastThreadCreated } from "../../realtime/ws.js";
 import { enqueueThreadImage } from "../../queue/thread.queue.js";
 import {
+  createLikeRecord,
+  createReplyRecord,
   createThreadRecord,
+  deleteLikeRecord,
   findAllThreads,
+  findLikeByUserAndThread,
   findRepliesByThreadId,
+  findThreadExistence,
   findThreadById,
 } from "./thread.repository.js";
 import type {
@@ -25,7 +30,8 @@ export const createThread = async (payload: CreateThreadInput): Promise<ThreadLi
 
   if (payload.image) {
     enqueueThreadImage({
-      threadId: createdThread.id,
+      source: "thread",
+      sourceId: createdThread.id,
       imageFileName: payload.image,
     });
   }
@@ -33,6 +39,72 @@ export const createThread = async (payload: CreateThreadInput): Promise<ThreadLi
   broadcastThreadCreated(mappedThread);
 
   return mappedThread;
+};
+
+export const createReply = async (payload: {
+  threadId: string;
+  userId: string;
+  content: string;
+  image?: string;
+}): Promise<ThreadReplyItem> => {
+  const thread = await findThreadExistence(payload.threadId);
+  if (!thread) {
+    throw new Error("THREAD_NOT_FOUND");
+  }
+
+  const createdReply = await createReplyRecord(payload);
+
+  if (payload.image) {
+    enqueueThreadImage({
+      source: "reply",
+      sourceId: createdReply.id,
+      imageFileName: payload.image,
+    });
+  }
+
+  const appUrl = process.env.APP_URL || "http://localhost:5000";
+  const mappedReply: ThreadReplyItem = {
+    id: createdReply.id,
+    content: createdReply.content,
+    image: createdReply.image ? `${appUrl}/uploads/${createdReply.image}` : null,
+    created_at: createdReply.created_at,
+    user: {
+      id: createdReply.user?.id ?? null,
+      username: createdReply.user?.username ?? "unknown",
+      name: createdReply.user?.full_name ?? "Unknown User",
+      profile_picture: createdReply.user?.photo_profile ?? null,
+    },
+  };
+
+  broadcastReplyCreated({
+    threadId: payload.threadId,
+    reply: mappedReply,
+  });
+
+  return mappedReply;
+};
+
+export const likeThread = async (userId: string, threadId: string) => {
+  const thread = await findThreadExistence(threadId);
+  if (!thread) {
+    throw new Error("THREAD_NOT_FOUND");
+  }
+
+  const existingLike = await findLikeByUserAndThread(userId, threadId);
+  if (existingLike) {
+    throw new Error("ALREADY_LIKED");
+  }
+
+  return createLikeRecord({ userId, threadId });
+};
+
+export const unlikeThread = async (userId: string, threadId: string) => {
+  const existingLike = await findLikeByUserAndThread(userId, threadId);
+  if (!existingLike) {
+    throw new Error("LIKE_NOT_FOUND");
+  }
+
+  return deleteLikeRecord({ userId, threadId });
 };
 
 export const getThreadDetail = async (

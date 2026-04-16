@@ -1,5 +1,6 @@
 type ThreadImageQueueItem = {
-  threadId: string;
+  source: "thread" | "reply";
+  sourceId: string;
   imageFileName: string;
 };
 
@@ -16,7 +17,7 @@ export const startThreadQueueWorker = () => {
 
     // Simulasi background processing image.
     console.log(
-      `[queue] processing image for thread ${nextItem.threadId}: ${nextItem.imageFileName}`,
+      `[queue] processing image for ${nextItem.source} ${nextItem.sourceId}: ${nextItem.imageFileName}`,
     );
   }, 1500);
 };

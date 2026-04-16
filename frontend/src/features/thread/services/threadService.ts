@@ -75,6 +75,15 @@ type GetThreadRepliesResponse = {
   };
 };
 
+type CreateReplyResponse = {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    reply: ThreadReplyApiItem;
+  };
+};
+
 export const getThreadsRequest = async () => {
   const response = await api.get<GetThreadsResponse>("/threads");
   return response.data;
@@ -97,6 +106,33 @@ export const getThreadDetailRequest = async (threadId: string) => {
 
 export const getThreadRepliesRequest = async (threadId: string) => {
   const response = await api.get<GetThreadRepliesResponse>(`/thread/${threadId}/replies`);
+  return response.data;
+};
+
+export const createReplyRequest = async (threadId: string, payload: FormData) => {
+  const response = await api.post<CreateReplyResponse>(
+    `/reply?thread_id=${encodeURIComponent(threadId)}`,
+    payload,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
+  );
+  return response.data;
+};
+
+export const likeThreadRequest = async (threadId: string) => {
+  const response = await api.post("/like", { thread_id: threadId });
+  return response.data;
+};
+
+export const unlikeThreadRequest = async (threadId: string) => {
+  const response = await api.delete("/like", {
+    data: {
+      thread_id: threadId,
+    },
+  });
   return response.data;
 };
 

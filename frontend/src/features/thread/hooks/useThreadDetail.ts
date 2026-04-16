@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
 import {
+  createReplyRequest,
   getThreadDetailRequest,
   getThreadRepliesRequest,
   type ThreadDetailApiItem,
   type ThreadReplyApiItem,
 } from "../services/threadService";
 import type { ThreadDetailItem, ThreadReplyItem } from "../types/thread.type";
+import { useAppDispatch, useAppSelector } from "@/app/hooks";
+import { setThreadLikeState } from "@/features/like/likeSlice";
+import { likeThreadRequest, unlikeThreadRequest } from "../services/threadService";
 
 export function useThreadDetail(threadId: string | undefined) {
+  const dispatch = useAppDispatch();
+  const likeByThreadId = useAppSelector((state) =>
+    threadId ? state.like.byThreadId[threadId] : undefined,
+  );
   const [thread, setThread] = useState<ThreadDetailItem | null>(null);
   const [replies, setReplies] = useState<ThreadReplyItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isReplySubmitting, setIsReplySubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
@@ -31,6 +40,13 @@ export function useThreadDetail(threadId: string | undefined) {
         ]);
 
         setThread(mapThreadDetail(threadResult.data));
+        dispatch(
+          setThreadLikeState({
+            threadId,
+            liked: threadResult.data.liked,
+            likeCount: threadResult.data.likes,
+          }),
+        );
         setReplies(repliesResult.data.replies.map((item) => mapReply(item)));
       } catch {
         setErrorMessage("Gagal mengambil detail thread.");
@@ -40,9 +56,118 @@ export function useThreadDetail(threadId: string | undefined) {
     };
 
     fetchDetail();
+  }, [threadId, dispatch]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token || !threadId) return;
+
+    const wsBaseUrl = (import.meta.env.VITE_WS_URL || "ws://localhost:5000").replace(
+      /\/$/,
+      "",
+    );
+    const socket = new WebSocket(`${wsBaseUrl}/ws?token=${encodeURIComponent(token)}`);
+
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as {
+          event: string;
+          data: { threadId: string; reply: ThreadReplyApiItem };
+        };
+
+        if (payload.event !== "reply:created" || payload.data.threadId !== threadId) return;
+        const mappedReply = mapReply(payload.data.reply);
+        setReplies((prev) => [mappedReply, ...prev]);
+        setThread((prev) => (prev ? { ...prev, replies: prev.replies + 1 } : prev));
+      } catch {
+        // ignore payload errors
+      }
+    };
+
+    return () => {
+      socket.close();
+    };
   }, [threadId]);
 
-  return { thread, replies, isLoading, errorMessage };
+  const submitReply = async (content: string, imageFile?: File | null) => {
+    if (!threadId) return;
+
+    const formData = new FormData();
+    formData.append("content", content);
+    if (imageFile) formData.append("image", imageFile);
+
+    setIsReplySubmitting(true);
+    setErrorMessage("");
+
+    try {
+      const result = await createReplyRequest(threadId, formData);
+      const mappedReply = mapReply(result.data.reply);
+      setReplies((prev) => [mappedReply, ...prev]);
+      setThread((prev) => (prev ? { ...prev, replies: prev.replies + 1 } : prev));
+    } catch {
+      setErrorMessage("Gagal mengirim reply.");
+      throw new Error("REPLY_FAILED");
+    } finally {
+      setIsReplySubmitting(false);
+    }
+  };
+
+  const toggleLike = async () => {
+    if (!threadId || !thread) return;
+
+    const currentLiked = likeByThreadId?.liked ?? thread.liked;
+    const currentLikeCount = likeByThreadId?.likeCount ?? thread.likes;
+    const nextLiked = !currentLiked;
+    const nextLikeCount = nextLiked ? currentLikeCount + 1 : currentLikeCount - 1;
+
+    dispatch(setThreadLikeState({ threadId, liked: nextLiked, likeCount: nextLikeCount }));
+    setThread((prev) =>
+      prev
+        ? {
+            ...prev,
+            liked: nextLiked,
+            likes: nextLikeCount,
+          }
+        : prev,
+    );
+
+    try {
+      if (nextLiked) {
+        await likeThreadRequest(threadId);
+      } else {
+        await unlikeThreadRequest(threadId);
+      }
+    } catch {
+      dispatch(
+        setThreadLikeState({
+          threadId,
+          liked: currentLiked,
+          likeCount: currentLikeCount,
+        }),
+      );
+      setThread((prev) =>
+        prev
+          ? {
+              ...prev,
+              liked: currentLiked,
+              likes: currentLikeCount,
+            }
+          : prev,
+      );
+      setErrorMessage("Gagal update like thread.");
+    }
+  };
+
+  return {
+    thread,
+    replies,
+    isLoading,
+    isReplySubmitting,
+    errorMessage,
+    submitReply,
+    toggleLike,
+    likeState: likeByThreadId,
+  };
 }
 
 const mapThreadDetail = (thread: ThreadDetailApiItem): ThreadDetailItem => ({

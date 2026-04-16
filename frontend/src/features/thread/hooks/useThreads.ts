@@ -2,9 +2,16 @@ import { useEffect, useState } from "react";
 import {
   createThreadRequest,
   getThreadsRequest,
+  likeThreadRequest,
   type ThreadApiItem,
+  unlikeThreadRequest,
 } from "../services/threadService";
 import type { ThreadItem } from "../types/thread.type";
+import { useAppDispatch, useAppSelector } from "@/app/hooks";
+import {
+  hydrateLikesFromThreads,
+  setThreadLikeState,
+} from "@/features/like/likeSlice";
 
 const DUMMY_THREADS: ThreadItem[] = [
   {
@@ -45,6 +52,8 @@ const DUMMY_THREADS: ThreadItem[] = [
 ];
 
 export function useThreads() {
+  const dispatch = useAppDispatch();
+  const likeByThreadId = useAppSelector((state) => state.like.byThreadId);
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isPosting, setIsPosting] = useState<boolean>(false);
@@ -59,6 +68,7 @@ export function useThreads() {
         );
 
         setThreads(mappedThreads);
+        dispatch(hydrateLikesFromThreads(mappedThreads));
       } catch {
         setThreads(DUMMY_THREADS);
         setErrorMessage("Gagal load dari API, menampilkan dummy data.");
@@ -68,7 +78,7 @@ export function useThreads() {
     };
 
     loadThreads();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -94,6 +104,13 @@ export function useThreads() {
           if (prev.some((item) => item.id === mapped.id)) return prev;
           return [mapped, ...prev];
         });
+        dispatch(
+          setThreadLikeState({
+            threadId: mapped.id,
+            liked: mapped.liked,
+            likeCount: mapped.likeCount,
+          }),
+        );
       } catch {
         // Ignore malformed WS payload.
       }
@@ -102,20 +119,42 @@ export function useThreads() {
     return () => {
       socket.close();
     };
-  }, []);
+  }, [dispatch]);
 
-  const toggleLike = (threadId: string) => {
-    setThreads((prevThreads) =>
-      prevThreads.map((thread) => {
-        if (thread.id !== threadId) return thread;
-        const nextLiked = !thread.liked;
-        return {
-          ...thread,
-          liked: nextLiked,
-          likeCount: nextLiked ? thread.likeCount + 1 : thread.likeCount - 1,
-        };
+  const toggleLike = async (threadId: string) => {
+    const thread = threads.find((item) => item.id === threadId);
+    if (!thread) return;
+
+    const currentLike = likeByThreadId[threadId];
+    const currentLiked = currentLike?.liked ?? thread.liked;
+    const currentLikeCount = currentLike?.likeCount ?? thread.likeCount;
+    const nextLiked = !currentLiked;
+    const nextLikeCount = nextLiked ? currentLikeCount + 1 : currentLikeCount - 1;
+
+    dispatch(
+      setThreadLikeState({
+        threadId,
+        liked: nextLiked,
+        likeCount: nextLikeCount,
       }),
     );
+
+    try {
+      if (nextLiked) {
+        await likeThreadRequest(threadId);
+      } else {
+        await unlikeThreadRequest(threadId);
+      }
+    } catch {
+      dispatch(
+        setThreadLikeState({
+          threadId,
+          liked: currentLiked,
+          likeCount: currentLikeCount,
+        }),
+      );
+      setErrorMessage("Gagal update like.");
+    }
   };
 
   const createThread = async (content: string, imageFile?: File | null) => {

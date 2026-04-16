@@ -1,15 +1,20 @@
 import { Heart, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useAppSelector } from "@/app/hooks";
 import type { ThreadItem } from "../types/thread.type";
 
 type ThreadCardProps = {
   thread: ThreadItem;
-  onToggleLike: (threadId: string) => void;
+  onToggleLike: (threadId: string) => void | Promise<void>;
   onClick?: (threadId: string) => void;
 };
 
 export default function ThreadCard({ thread, onToggleLike, onClick }: ThreadCardProps) {
+  const likeState = useAppSelector((state) => state.like.byThreadId[thread.id]);
+  const liked = likeState?.liked ?? thread.liked;
+  const likeCount = likeState?.likeCount ?? thread.likeCount;
+
   return (
     <Card
       className="cursor-pointer gap-3 rounded-2xl border-zinc-800 bg-zinc-950/80 text-zinc-100"
@@ -40,10 +45,10 @@ export default function ThreadCard({ thread, onToggleLike, onClick }: ThreadCard
 
         <div className="flex items-center gap-2 text-sm">
           <Button
-            variant={thread.liked ? "default" : "outline"}
+            variant={liked ? "default" : "outline"}
             size="sm"
             className={
-              thread.liked
+              liked
                 ? "bg-green-600 text-white hover:bg-green-500"
                 : "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
             }
@@ -54,9 +59,9 @@ export default function ThreadCard({ thread, onToggleLike, onClick }: ThreadCard
             type="button"
           >
             <Heart className="h-4 w-4" />
-            {thread.liked ? "Liked" : "Like"}
+            {liked ? "Liked" : "Like"}
           </Button>
-          <span className="text-zinc-400">{thread.likeCount}</span>
+          <span className="text-zinc-400">{likeCount}</span>
           <MessageCircle className="ml-2 h-4 w-4 text-zinc-400" />
           <span className="text-zinc-400">{thread.replyCount}</span>
         </div>

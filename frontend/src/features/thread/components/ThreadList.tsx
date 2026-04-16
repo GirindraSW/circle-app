@@ -3,7 +3,7 @@ import ThreadCard from "./ThreadCard";
 
 type ThreadListProps = {
   threads: ThreadItem[];
-  onToggleLike: (threadId: string) => void;
+  onToggleLike: (threadId: string) => void | Promise<void>;
   onThreadClick?: (threadId: string) => void;
 };
 

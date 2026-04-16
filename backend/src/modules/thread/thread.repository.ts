@@ -132,3 +132,75 @@ export const findRepliesByThreadId = async (threadId: string) => {
     },
   });
 };
+
+export const createReplyRecord = async (payload: {
+  threadId: string;
+  userId: string;
+  content: string;
+  image?: string;
+}) => {
+  return prisma.reply.create({
+    data: {
+      thread_id: payload.threadId,
+      user_id: payload.userId,
+      content: payload.content,
+      image: payload.image,
+      created_by: payload.userId,
+      updated_by: payload.userId,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          full_name: true,
+          photo_profile: true,
+        },
+      },
+    },
+  });
+};
+
+export const findThreadExistence = async (threadId: string) => {
+  return prisma.thread.findUnique({
+    where: {
+      id: threadId,
+    },
+    select: {
+      id: true,
+    },
+  });
+};
+
+export const findLikeByUserAndThread = async (userId: string, threadId: string) => {
+  return prisma.like.findUnique({
+    where: {
+      user_id_thread_id: {
+        user_id: userId,
+        thread_id: threadId,
+      },
+    },
+  });
+};
+
+export const createLikeRecord = async (payload: { userId: string; threadId: string }) => {
+  return prisma.like.create({
+    data: {
+      user_id: payload.userId,
+      thread_id: payload.threadId,
+      created_by: payload.userId,
+      updated_by: payload.userId,
+    },
+  });
+};
+
+export const deleteLikeRecord = async (payload: { userId: string; threadId: string }) => {
+  return prisma.like.delete({
+    where: {
+      user_id_thread_id: {
+        user_id: payload.userId,
+        thread_id: payload.threadId,
+      },
+    },
+  });
+};
