@@ -1,6 +1,6 @@
 import { LogOut } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { Button } from "../components/ui/button";
 import UserAvatar from "../components/UserAvatar";
@@ -104,6 +104,9 @@ function HomePage() {
             <p className="text-sm text-zinc-400">
               Welcome, {profile?.name || profile?.username || user?.name || user?.username || "User"}
             </p>
+            <Link to="/follows?type=followers" className="text-xs text-zinc-400 hover:text-zinc-100">
+              Open Follows
+            </Link>
           </div>
           <Button
             variant="outline"

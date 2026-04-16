@@ -6,6 +6,7 @@ import cors from "cors";
 import { WebSocketServer } from "ws";
 import authRouter from "./routes/auth.routes.js";
 import { prisma } from "./lib/prisma.js";
+import followRouter from "./modules/follow/follow.route.js";
 import { likeRouter, replyRouter, threadRouter } from "./modules/thread/thread.route.js";
 import { startThreadQueueWorker } from "./queue/thread.queue.js";
 import { initWebSocket } from "./realtime/ws.js";
@@ -23,6 +24,7 @@ app.use("/api/v1/threads", threadRouter);
 app.use("/api/v1/thread", threadRouter);
 app.use("/api/v1/reply", replyRouter);
 app.use("/api/v1/like", likeRouter);
+app.use("/api/v1/follows", followRouter);
 
 app.get("/", async (req: Request, res: Response) => {
   res.json({
