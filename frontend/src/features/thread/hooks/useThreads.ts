@@ -202,7 +202,7 @@ const mapThreadFromApi = (thread: ThreadApiItem): ThreadItem => ({
   id: thread.id,
   authorName: thread.author.name,
   authorUsername: thread.author.username,
-  authorAvatar: thread.author.avatar || "https://i.pravatar.cc/100?img=3",
+  authorAvatar: thread.author.avatar || undefined,
   content: thread.content,
   image: thread.image || undefined,
   createdAtLabel: formatThreadDate(thread.createdAt),

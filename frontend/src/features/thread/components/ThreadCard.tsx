@@ -2,6 +2,7 @@ import { Heart, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAppSelector } from "@/app/hooks";
+import UserAvatar from "@/components/UserAvatar";
 import type { ThreadItem } from "../types/thread.type";
 
 type ThreadCardProps = {
@@ -21,10 +22,11 @@ export default function ThreadCard({ thread, onToggleLike, onClick }: ThreadCard
       onClick={() => onClick?.(thread.id)}
     >
       <CardHeader className="flex flex-row items-start gap-3">
-        <img
+        <UserAvatar
           src={thread.authorAvatar}
-          alt={thread.authorName}
-          className="h-10 w-10 rounded-full object-cover"
+          name={thread.authorName}
+          seed={thread.authorUsername}
+          className="h-10 w-10"
         />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{thread.authorName}</p>

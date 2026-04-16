@@ -2,7 +2,7 @@ export type ThreadItem = {
   id: string;
   authorName: string;
   authorUsername: string;
-  authorAvatar: string;
+  authorAvatar?: string;
   content: string;
   image?: string;
   createdAtLabel: string;

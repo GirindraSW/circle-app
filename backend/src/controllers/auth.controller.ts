@@ -218,3 +218,95 @@ export const me = async (req: AuthenticatedRequest, res: Response) => {
     });
   }
 };
+
+export const updateMe = async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.user_id;
+  const authReq = req as AuthenticatedRequest & { file?: Express.Multer.File };
+  const { username, name, bio } = req.body as {
+    username?: string;
+    name?: string;
+    bio?: string;
+  };
+  const uploadedAvatar = authReq.file;
+  const appUrl = process.env.APP_URL || "http://localhost:5000";
+  const avatarUrl = uploadedAvatar ? `${appUrl}/uploads/${uploadedAvatar.filename}` : undefined;
+
+  if (!userId) {
+    return res.status(401).json({
+      code: 401,
+      status: "error",
+      message: "Unauthorized",
+    });
+  }
+
+  if (!username && !name && bio === undefined && avatarUrl === undefined) {
+    return res.status(400).json({
+      code: 400,
+      status: "error",
+      message: "No profile data to update",
+    });
+  }
+
+  try {
+    if (username) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          username,
+          NOT: {
+            id: userId,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (existingUser) {
+        return res.status(409).json({
+          code: 409,
+          status: "error",
+          message: "Username already used",
+        });
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        username: username ?? undefined,
+        full_name: name ?? undefined,
+        bio: bio ?? undefined,
+        photo_profile: avatarUrl ?? undefined,
+        updated_by: userId,
+      },
+      select: {
+        id: true,
+        username: true,
+        full_name: true,
+        email: true,
+        photo_profile: true,
+        bio: true,
+      },
+    });
+
+    return res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Profile updated successfully.",
+      data: {
+        user_id: updatedUser.id,
+        username: updatedUser.username,
+        name: updatedUser.full_name,
+        email: updatedUser.email,
+        avatar: updatedUser.photo_profile,
+        bio: updatedUser.bio,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      status: "error",
+      message: "Failed to update profile",
+    });
+  }
+};

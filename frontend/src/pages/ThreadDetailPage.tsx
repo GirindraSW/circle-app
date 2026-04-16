@@ -3,6 +3,7 @@ import { FormEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import UserAvatar from "@/components/UserAvatar";
 import { useThreadDetail } from "@/features/thread/hooks/useThreadDetail";
 
 export default function ThreadDetailPage() {
@@ -64,10 +65,11 @@ export default function ThreadDetailPage() {
         {thread ? (
           <Card className="mb-4 gap-3 rounded-2xl border-zinc-800 bg-zinc-950/80 text-zinc-100">
             <CardHeader className="flex flex-row items-start gap-3">
-              <img
-                src={thread.user.profile_picture || "https://i.pravatar.cc/100?img=5"}
-                alt={thread.user.name}
-                className="h-10 w-10 rounded-full object-cover"
+              <UserAvatar
+                src={thread.user.profile_picture}
+                name={thread.user.name}
+                seed={thread.user.username}
+                className="h-10 w-10"
               />
               <div>
                 <p className="text-sm font-semibold">{thread.user.name}</p>
@@ -143,10 +145,11 @@ export default function ThreadDetailPage() {
               className="gap-3 rounded-2xl border-zinc-800 bg-zinc-950/80 text-zinc-100"
             >
               <CardHeader className="flex flex-row items-start gap-3">
-                <img
-                  src={reply.user.profile_picture || "https://i.pravatar.cc/100?img=8"}
-                  alt={reply.user.name}
-                  className="h-10 w-10 rounded-full object-cover"
+                <UserAvatar
+                  src={reply.user.profile_picture}
+                  name={reply.user.name}
+                  seed={reply.user.username}
+                  className="h-10 w-10"
                 />
                 <div>
                   <p className="text-sm font-semibold">{reply.user.name}</p>
