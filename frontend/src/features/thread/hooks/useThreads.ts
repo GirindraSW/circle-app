@@ -12,6 +12,7 @@ import type { ThreadItem } from "../types/thread.type";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import {
   hydrateLikesFromThreads,
+  setThreadLikeCount,
   setThreadLikeState,
 } from "@/features/like/likeSlice";
 
@@ -95,25 +96,55 @@ export function useThreads() {
 
     socket.onmessage = (event) => {
       try {
-        const payload = JSON.parse(event.data) as {
-          event: string;
-          data: ThreadApiItem;
-        };
+        const payload = JSON.parse(event.data) as
+          | {
+              event: "thread:created";
+              data: ThreadApiItem;
+            }
+          | {
+              event: "thread:like_updated";
+              data: {
+                threadId: string;
+                userId: string;
+                liked: boolean;
+                likeCount: number;
+              };
+            };
 
-        if (payload.event !== "thread:created") return;
+        if (payload.event === "thread:created") {
+          const mapped = mapThreadFromApi(payload.data);
+          setThreads((prev) => {
+            if (prev.some((item) => item.id === mapped.id)) return prev;
+            return [mapped, ...prev];
+          });
+          dispatch(
+            setThreadLikeState({
+              threadId: mapped.id,
+              liked: mapped.liked,
+              likeCount: mapped.likeCount,
+            }),
+          );
+          return;
+        }
 
-        const mapped = mapThreadFromApi(payload.data);
-        setThreads((prev) => {
-          if (prev.some((item) => item.id === mapped.id)) return prev;
-          return [mapped, ...prev];
-        });
-        dispatch(
-          setThreadLikeState({
-            threadId: mapped.id,
-            liked: mapped.liked,
-            likeCount: mapped.likeCount,
-          }),
-        );
+        if (payload.event === "thread:like_updated") {
+          dispatch(
+            setThreadLikeCount({
+              threadId: payload.data.threadId,
+              likeCount: payload.data.likeCount,
+            }),
+          );
+
+          if (payload.data.userId === currentUserId) {
+            dispatch(
+              setThreadLikeState({
+                threadId: payload.data.threadId,
+                liked: payload.data.liked,
+                likeCount: payload.data.likeCount,
+              }),
+            );
+          }
+        }
       } catch {
         // Ignore malformed WS payload.
       }
@@ -122,7 +153,7 @@ export function useThreads() {
     return () => {
       socket.close();
     };
-  }, [dispatch]);
+  }, [currentUserId, dispatch]);
 
   const toggleLike = async (threadId: string) => {
     const thread = threads.find((item) => item.id === threadId);

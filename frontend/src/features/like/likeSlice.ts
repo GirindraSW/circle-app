@@ -37,8 +37,19 @@ const likeSlice = createSlice({
         likeCount: action.payload.likeCount,
       };
     },
+    setThreadLikeCount: (
+      state,
+      action: PayloadAction<{ threadId: string; likeCount: number }>,
+    ) => {
+      const current = state.byThreadId[action.payload.threadId];
+      state.byThreadId[action.payload.threadId] = {
+        liked: current?.liked ?? false,
+        likeCount: action.payload.likeCount,
+      };
+    },
   },
 });
 
-export const { hydrateLikesFromThreads, setThreadLikeState } = likeSlice.actions;
+export const { hydrateLikesFromThreads, setThreadLikeState, setThreadLikeCount } =
+  likeSlice.actions;
 export default likeSlice.reducer;

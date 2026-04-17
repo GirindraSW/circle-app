@@ -8,11 +8,12 @@ import {
 } from "../services/threadService";
 import type { ThreadDetailItem, ThreadReplyItem } from "../types/thread.type";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import { setThreadLikeState } from "@/features/like/likeSlice";
+import { setThreadLikeCount, setThreadLikeState } from "@/features/like/likeSlice";
 import { likeThreadRequest, unlikeThreadRequest } from "../services/threadService";
 
 export function useThreadDetail(threadId: string | undefined) {
   const dispatch = useAppDispatch();
+  const currentUserId = useAppSelector((state) => state.auth.user?.user_id);
   const likeByThreadId = useAppSelector((state) =>
     threadId ? state.like.byThreadId[threadId] : undefined,
   );
@@ -70,15 +71,61 @@ export function useThreadDetail(threadId: string | undefined) {
 
     socket.onmessage = (event) => {
       try {
-        const payload = JSON.parse(event.data) as {
-          event: string;
-          data: { threadId: string; reply: ThreadReplyApiItem };
-        };
+        const payload = JSON.parse(event.data) as
+          | {
+              event: "reply:created";
+              data: { threadId: string; reply: ThreadReplyApiItem };
+            }
+          | {
+              event: "thread:like_updated";
+              data: {
+                threadId: string;
+                userId: string;
+                liked: boolean;
+                likeCount: number;
+              };
+            };
 
-        if (payload.event !== "reply:created" || payload.data.threadId !== threadId) return;
-        const mappedReply = mapReply(payload.data.reply);
-        setReplies((prev) => [mappedReply, ...prev]);
-        setThread((prev) => (prev ? { ...prev, replies: prev.replies + 1 } : prev));
+        if (payload.event === "reply:created") {
+          if (payload.data.threadId !== threadId) return;
+
+          const mappedReply = mapReply(payload.data.reply);
+          setReplies((prev) => [mappedReply, ...prev]);
+          setThread((prev) => (prev ? { ...prev, replies: prev.replies + 1 } : prev));
+          return;
+        }
+
+        if (payload.event === "thread:like_updated") {
+          if (payload.data.threadId !== threadId) return;
+
+          dispatch(
+            setThreadLikeCount({
+              threadId: payload.data.threadId,
+              likeCount: payload.data.likeCount,
+            }),
+          );
+
+          if (payload.data.userId === currentUserId) {
+            dispatch(
+              setThreadLikeState({
+                threadId: payload.data.threadId,
+                liked: payload.data.liked,
+                likeCount: payload.data.likeCount,
+              }),
+            );
+          }
+
+          setThread((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  likes: payload.data.likeCount,
+                  liked:
+                    payload.data.userId === currentUserId ? payload.data.liked : prev.liked,
+                }
+              : prev,
+          );
+        }
       } catch {
         // ignore payload errors
       }
@@ -87,7 +134,7 @@ export function useThreadDetail(threadId: string | undefined) {
     return () => {
       socket.close();
     };
-  }, [threadId]);
+  }, [currentUserId, dispatch, threadId]);
 
   const submitReply = async (content: string, imageFile?: File | null) => {
     if (!threadId) return;

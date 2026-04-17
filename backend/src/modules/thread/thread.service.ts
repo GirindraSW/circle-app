@@ -1,4 +1,8 @@
-import { broadcastReplyCreated, broadcastThreadCreated } from "../../realtime/ws.js";
+import {
+  broadcastReplyCreated,
+  broadcastThreadCreated,
+  broadcastThreadLikeUpdated,
+} from "../../realtime/ws.js";
 import { enqueueThreadImage } from "../../queue/thread.queue.js";
 import {
   createLikeRecord,
@@ -8,6 +12,7 @@ import {
   deleteLikeRecord,
   findAllThreads,
   findLikeByUserAndThread,
+  findThreadLikeCount,
   findThreadOwnerById,
   findRepliesByThreadId,
   findThreadExistence,
@@ -129,7 +134,15 @@ export const likeThread = async (userId: string, threadId: string) => {
     throw new Error("ALREADY_LIKED");
   }
 
-  return createLikeRecord({ userId, threadId });
+  await createLikeRecord({ userId, threadId });
+  const likeCount = await findThreadLikeCount(threadId);
+
+  broadcastThreadLikeUpdated({
+    threadId,
+    userId,
+    liked: true,
+    likeCount,
+  });
 };
 
 export const unlikeThread = async (userId: string, threadId: string) => {
@@ -138,7 +151,15 @@ export const unlikeThread = async (userId: string, threadId: string) => {
     throw new Error("LIKE_NOT_FOUND");
   }
 
-  return deleteLikeRecord({ userId, threadId });
+  await deleteLikeRecord({ userId, threadId });
+  const likeCount = await findThreadLikeCount(threadId);
+
+  broadcastThreadLikeUpdated({
+    threadId,
+    userId,
+    liked: false,
+    likeCount,
+  });
 };
 
 export const getThreadDetail = async (

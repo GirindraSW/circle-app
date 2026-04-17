@@ -62,3 +62,21 @@ export const broadcastReplyCreated = (payload: {
     }
   }
 };
+
+export const broadcastThreadLikeUpdated = (payload: {
+  threadId: string;
+  userId: string;
+  liked: boolean;
+  likeCount: number;
+}) => {
+  const message = JSON.stringify({
+    event: "thread:like_updated",
+    data: payload,
+  });
+
+  for (const [, client] of clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  }
+};

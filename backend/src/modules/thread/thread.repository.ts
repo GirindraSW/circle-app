@@ -257,6 +257,14 @@ export const findLikeByUserAndThread = async (userId: string, threadId: string) 
   });
 };
 
+export const findThreadLikeCount = async (threadId: string) => {
+  return prisma.like.count({
+    where: {
+      thread_id: threadId,
+    },
+  });
+};
+
 export const createLikeRecord = async (payload: { userId: string; threadId: string }) => {
   return prisma.like.create({
     data: {
