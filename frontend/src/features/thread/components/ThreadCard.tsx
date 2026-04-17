@@ -28,7 +28,7 @@ export default function ThreadCard({
 
   return (
     <Card
-      className="cursor-pointer gap-3 rounded-2xl border-zinc-800 bg-zinc-950/80 text-zinc-100"
+      className="cursor-pointer gap-3 rounded-2xl border-blue-200 bg-white/90 text-slate-800"
       onClick={() => onClick?.(thread.id)}
     >
       <CardHeader className="flex flex-row items-start gap-3">
@@ -40,13 +40,13 @@ export default function ThreadCard({
         />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{thread.authorName}</p>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-500">
             @{thread.authorUsername} - {thread.createdAtLabel}
           </p>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm leading-6 text-zinc-100">{thread.content}</p>
+        <p className="text-sm leading-6 text-slate-800">{thread.content}</p>
         {thread.image ? (
           <img
             src={thread.image}
@@ -61,8 +61,8 @@ export default function ThreadCard({
             size="sm"
             className={
               liked
-                ? "bg-green-600 text-white hover:bg-green-500"
-                : "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+                ? "bg-blue-500 text-white hover:bg-blue-600"
+                : "border-blue-200 bg-white text-slate-800 hover:bg-blue-100"
             }
             onClick={(event) => {
               event.stopPropagation();
@@ -73,15 +73,15 @@ export default function ThreadCard({
             <Heart className="h-4 w-4" />
             {liked ? "Liked" : "Like"}
           </Button>
-          <span className="text-zinc-400">{likeCount}</span>
-          <MessageCircle className="ml-2 h-4 w-4 text-zinc-400" />
-          <span className="text-zinc-400">{thread.replyCount}</span>
+          <span className="text-slate-500">{likeCount}</span>
+          <MessageCircle className="ml-2 h-4 w-4 text-slate-500" />
+          <span className="text-slate-500">{thread.replyCount}</span>
           {isOwner ? (
             <>
               <Button
                 variant="outline"
                 size="sm"
-                className="ml-auto border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+                className="ml-auto border-blue-200 bg-white text-slate-800 hover:bg-blue-100"
                 onClick={(event) => {
                   event.stopPropagation();
                   void onEditThread(thread);
@@ -94,7 +94,7 @@ export default function ThreadCard({
               <Button
                 variant="outline"
                 size="sm"
-                className="border-red-700 bg-zinc-900 text-red-300 hover:bg-red-950/30"
+                className="border-red-700 bg-white text-red-300 hover:bg-red-950/30"
                 onClick={(event) => {
                   event.stopPropagation();
                   void onDeleteThread(thread);
@@ -111,3 +111,4 @@ export default function ThreadCard({
     </Card>
   );
 }
+

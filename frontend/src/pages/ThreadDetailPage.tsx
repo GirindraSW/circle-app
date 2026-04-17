@@ -40,14 +40,14 @@ export default function ThreadDetailPage() {
   const likes = likeState?.likeCount ?? thread?.likes ?? 0;
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+    <main className="min-h-screen bg-slate-100 text-slate-800">
       <section className="mx-auto grid max-w-[1300px] lg:grid-cols-[240px_minmax(0,1fr)_320px]">
         <AppSidebar />
 
-        <section className="min-h-screen border-x border-zinc-800 px-4 py-6 sm:px-6">
+        <section className="min-h-screen border-x border-blue-200 px-4 py-6 sm:px-6">
           <Link
             to="/home"
-            className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100"
+            className="mb-4 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -56,7 +56,7 @@ export default function ThreadDetailPage() {
           <h2 className="mb-4 text-xl font-semibold">Status</h2>
 
           {isLoading ? (
-            <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-zinc-400">
+            <p className="rounded-xl border border-blue-200 bg-white p-4 text-slate-500">
               Loading thread detail...
             </p>
           ) : null}
@@ -68,7 +68,7 @@ export default function ThreadDetailPage() {
           ) : null}
 
           {thread ? (
-            <Card className="mb-4 gap-3 rounded-2xl border-zinc-800 bg-zinc-950/80 text-zinc-100">
+            <Card className="mb-4 gap-3 rounded-2xl border-blue-200 bg-white/90 text-slate-800">
               <CardHeader className="flex flex-row items-start gap-3">
                 <UserAvatar
                   src={thread.user.profile_picture}
@@ -78,7 +78,7 @@ export default function ThreadDetailPage() {
                 />
                 <div>
                   <p className="text-sm font-semibold">{thread.user.name}</p>
-                  <p className="text-xs text-zinc-400">@{thread.user.username}</p>
+                  <p className="text-xs text-slate-500">@{thread.user.username}</p>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -90,15 +90,15 @@ export default function ThreadDetailPage() {
                     className="h-72 w-full rounded-xl object-cover"
                   />
                 ) : null}
-                <p className="text-xs text-zinc-500">{thread.createdAtLabel}</p>
-                <div className="flex items-center gap-4 text-sm text-zinc-300">
+                <p className="text-xs text-slate-400">{thread.createdAtLabel}</p>
+                <div className="flex items-center gap-4 text-sm text-slate-600">
                   <Button
                     variant={liked ? "default" : "outline"}
                     size="sm"
                     className={
                       liked
-                        ? "bg-green-600 text-white hover:bg-green-500"
-                        : "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "border-blue-200 bg-white text-slate-800 hover:bg-blue-100"
                     }
                     onClick={() => void toggleLike()}
                     type="button"
@@ -117,26 +117,26 @@ export default function ThreadDetailPage() {
 
           <form
             onSubmit={handleReplySubmit}
-            className="mb-4 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4"
+            className="mb-4 space-y-3 rounded-2xl border border-blue-200 bg-white/90 p-4"
           >
             <textarea
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
               rows={3}
               placeholder="Type your reply..."
-              className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="w-full resize-none rounded-xl border border-blue-200 bg-slate-100 px-3 py-2 text-sm outline-none focus:border-blue-400"
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setReplyImage(e.target.files?.[0] || null)}
-                className="text-xs text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-2 file:text-white"
+                className="text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-blue-500 file:px-3 file:py-2 file:text-white"
               />
               <Button
                 type="submit"
                 disabled={isReplySubmitting}
-                className="rounded-full bg-green-600 text-white hover:bg-green-500"
+                className="rounded-full bg-blue-500 text-white hover:bg-blue-600"
               >
                 {isReplySubmitting ? "Replying..." : "Reply"}
               </Button>
@@ -147,7 +147,7 @@ export default function ThreadDetailPage() {
             {replies.map((reply) => (
               <Card
                 key={reply.id}
-                className="gap-3 rounded-2xl border-zinc-800 bg-zinc-950/80 text-zinc-100"
+                className="gap-3 rounded-2xl border-blue-200 bg-white/90 text-slate-800"
               >
                 <CardHeader className="flex flex-row items-start gap-3">
                   <UserAvatar
@@ -158,7 +158,7 @@ export default function ThreadDetailPage() {
                   />
                   <div>
                     <p className="text-sm font-semibold">{reply.user.name}</p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-slate-500">
                       @{reply.user.username} - {reply.createdAtLabel}
                     </p>
                   </div>
@@ -185,3 +185,4 @@ export default function ThreadDetailPage() {
     </main>
   );
 }
+

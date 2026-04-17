@@ -16,21 +16,21 @@ export default function ProfilePage() {
   }, [dispatch, profileStatus]);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+    <main className="min-h-screen bg-slate-100 text-slate-800">
       <section className="mx-auto grid max-w-[1300px] lg:grid-cols-[240px_minmax(0,1fr)]">
         <AppSidebar />
 
-        <section className="min-h-screen border-x border-zinc-800 px-4 py-6 sm:px-6">
+        <section className="min-h-screen border-x border-blue-200 px-4 py-6 sm:px-6">
           <h2 className="mb-4 text-2xl font-semibold">Profile</h2>
 
           {profileStatus === "loading" ? (
-            <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-zinc-400">
+            <p className="rounded-xl border border-blue-200 bg-white p-4 text-slate-500">
               Loading profile...
             </p>
           ) : null}
 
           {profile ? (
-            <div className="max-w-lg space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
+            <div className="max-w-lg space-y-3 rounded-2xl border border-blue-200 bg-white/80 p-5">
               <UserAvatar
                 src={profile.avatar}
                 name={profile.name}
@@ -38,9 +38,9 @@ export default function ProfilePage() {
                 className="h-20 w-20"
               />
               <p className="text-2xl font-semibold">{profile.name}</p>
-              <p className="text-sm text-zinc-400">@{profile.username}</p>
-              <p className="text-sm text-zinc-200">{profile.bio || "No bio yet."}</p>
-              <p className="text-xs text-zinc-500">{profile.email}</p>
+              <p className="text-sm text-slate-500">@{profile.username}</p>
+              <p className="text-sm text-slate-700">{profile.bio || "No bio yet."}</p>
+              <p className="text-xs text-slate-400">{profile.email}</p>
             </div>
           ) : null}
         </section>
@@ -48,4 +48,5 @@ export default function ProfilePage() {
     </main>
   );
 }
+
 

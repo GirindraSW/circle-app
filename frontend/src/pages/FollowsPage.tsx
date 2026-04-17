@@ -67,11 +67,11 @@ export default function FollowsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+    <main className="min-h-screen bg-slate-100 text-slate-800">
       <section className="mx-auto grid max-w-[1300px] lg:grid-cols-[240px_minmax(0,1fr)_320px]">
         <AppSidebar />
 
-        <section className="min-h-screen border-x border-zinc-800 px-4 py-6 sm:px-6">
+        <section className="min-h-screen border-x border-blue-200 px-4 py-6 sm:px-6">
           <h2 className="mb-4 text-2xl font-semibold">Follows</h2>
           <div className="mb-4 flex gap-2">
             <Button
@@ -79,8 +79,8 @@ export default function FollowsPage() {
               variant={type === "followers" ? "default" : "outline"}
               className={
                 type === "followers"
-                  ? "bg-green-600 text-white hover:bg-green-500"
-                  : "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+                  ? "bg-blue-500 text-white hover:bg-blue-600"
+                  : "border-blue-200 bg-white text-slate-800 hover:bg-blue-100"
               }
               onClick={() => setType("followers")}
             >
@@ -91,8 +91,8 @@ export default function FollowsPage() {
               variant={type === "following" ? "default" : "outline"}
               className={
                 type === "following"
-                  ? "bg-green-600 text-white hover:bg-green-500"
-                  : "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+                  ? "bg-blue-500 text-white hover:bg-blue-600"
+                  : "border-blue-200 bg-white text-slate-800 hover:bg-blue-100"
               }
               onClick={() => setType("following")}
             >
@@ -100,7 +100,7 @@ export default function FollowsPage() {
             </Button>
           </div>
 
-          <p className="mb-3 text-sm text-zinc-400">{pageTitle}</p>
+          <p className="mb-3 text-sm text-slate-500">{pageTitle}</p>
           {errorMessage ? (
             <p className="mb-3 rounded-md border border-red-800/50 bg-red-950/40 px-3 py-2 text-sm text-red-300">
               {errorMessage}
@@ -108,7 +108,7 @@ export default function FollowsPage() {
           ) : null}
 
           {isLoading ? (
-            <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-zinc-400">
+            <p className="rounded-xl border border-blue-200 bg-white p-4 text-slate-500">
               Loading {pageTitle.toLowerCase()}...
             </p>
           ) : (
@@ -116,7 +116,7 @@ export default function FollowsPage() {
               {users.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/70 px-3 py-3"
+                  className="flex items-center justify-between rounded-xl border border-blue-200 bg-white/90 px-3 py-3"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <UserAvatar
@@ -127,7 +127,7 @@ export default function FollowsPage() {
                     />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{item.name}</p>
-                      <p className="truncate text-xs text-zinc-400">@{item.username}</p>
+                      <p className="truncate text-xs text-slate-500">@{item.username}</p>
                     </div>
                   </div>
                   <Button
@@ -135,8 +135,8 @@ export default function FollowsPage() {
                     variant={item.is_following ? "outline" : "default"}
                     className={
                       item.is_following
-                        ? "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
-                        : "bg-green-600 text-white hover:bg-green-500"
+                        ? "border-blue-200 bg-white text-slate-800 hover:bg-blue-100"
+                        : "bg-blue-500 text-white hover:bg-blue-600"
                     }
                     onClick={() => void handleToggleFollow(item.id, item.is_following)}
                   >
@@ -155,3 +155,4 @@ export default function FollowsPage() {
     </main>
   );
 }
+

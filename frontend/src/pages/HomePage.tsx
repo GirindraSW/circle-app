@@ -4,9 +4,12 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import AppSidebar from "../components/AppSidebar";
 import { Button } from "../components/ui/button";
 import UserAvatar from "../components/UserAvatar";
+import { followUserRequest, unfollowUserRequest } from "../features/follow/services/followService";
 import { fetchProfile, updateProfile } from "../features/profile/profileSlice";
 import ThreadList from "../features/thread/components/ThreadList";
 import { useThreads } from "../features/thread/hooks/useThreads";
+import { getSuggestedUsersRequest } from "../features/user/services/userService";
+import type { SearchUserItem } from "../features/user/types/user.type";
 
 function HomePage() {
   const dispatch = useAppDispatch();
@@ -36,12 +39,33 @@ function HomePage() {
     bio: "",
   });
   const [profileAvatarFile, setProfileAvatarFile] = useState<File | null>(null);
+  const [suggestedUsers, setSuggestedUsers] = useState<SearchUserItem[]>([]);
+  const [isSuggestedLoading, setIsSuggestedLoading] = useState<boolean>(true);
+  const [suggestedError, setSuggestedError] = useState<string>("");
 
   useEffect(() => {
     if (profileStatus === "idle") {
       void dispatch(fetchProfile());
     }
   }, [dispatch, profileStatus]);
+
+  useEffect(() => {
+    const loadSuggestedUsers = async () => {
+      try {
+        setIsSuggestedLoading(true);
+        setSuggestedError("");
+
+        const response = await getSuggestedUsersRequest();
+        setSuggestedUsers(response.data.users.slice(0, 5));
+      } catch {
+        setSuggestedError("Gagal memuat user recommendation.");
+      } finally {
+        setIsSuggestedLoading(false);
+      }
+    };
+
+    void loadSuggestedUsers();
+  }, []);
 
   const handleThreadClick = (threadId: string) => {
     navigate(`/thread/${threadId}`);
@@ -128,41 +152,64 @@ function HomePage() {
     }
   };
 
+  const handleToggleSuggestedFollow = async (targetUserId: string, isFollowing: boolean) => {
+    setSuggestedUsers((prev) =>
+      prev.map((item) =>
+        item.id === targetUserId ? { ...item, is_following: !isFollowing } : item,
+      ),
+    );
+
+    try {
+      if (isFollowing) {
+        await unfollowUserRequest(targetUserId);
+      } else {
+        await followUserRequest(targetUserId);
+      }
+    } catch {
+      setSuggestedUsers((prev) =>
+        prev.map((item) =>
+          item.id === targetUserId ? { ...item, is_following: isFollowing } : item,
+        ),
+      );
+      setSuggestedError("Gagal update follow status.");
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+    <main className="min-h-screen bg-slate-100 text-slate-800">
       <section className="mx-auto grid max-w-[1300px] lg:grid-cols-[240px_minmax(0,1fr)_320px]">
         <AppSidebar />
 
-        <section className="min-h-screen border-x border-zinc-800 px-4 py-6 sm:px-6">
+        <section className="min-h-screen border-x border-blue-200 px-4 py-6 sm:px-6">
           <header className="mb-6">
             <h2 className="text-2xl font-semibold">Home</h2>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-slate-500">
               Welcome, {profile?.name || profile?.username || user?.name || user?.username || "User"}
             </p>
           </header>
 
           <form
             onSubmit={handleSubmitThread}
-            className="mb-5 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4"
+            className="mb-5 space-y-3 rounded-2xl border border-blue-200 bg-white/90 p-4"
           >
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={3}
               placeholder="What is happening?!"
-              className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="w-full resize-none rounded-xl border border-blue-200 bg-slate-100 px-3 py-2 text-sm outline-none focus:border-blue-400"
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
-                className="text-xs text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-2 file:text-white"
+                className="text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-blue-500 file:px-3 file:py-2 file:text-white"
               />
               <Button
                 type="submit"
                 disabled={isPosting}
-                className="rounded-full bg-green-600 text-white hover:bg-green-500"
+                className="rounded-full bg-blue-500 text-white hover:bg-blue-600"
               >
                 {isPosting ? "Posting..." : "Reply"}
               </Button>
@@ -176,7 +223,7 @@ function HomePage() {
             </p>
           ) : null}
           {isLoading ? (
-            <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-zinc-400">
+            <p className="rounded-xl border border-blue-200 bg-white p-4 text-slate-500">
               Loading threads...
             </p>
           ) : (
@@ -192,13 +239,13 @@ function HomePage() {
         </section>
 
         <aside className="h-fit p-4">
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+          <section className="rounded-2xl border border-blue-200 bg-white/80 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-semibold">My Profile</h3>
             <Button
               variant="outline"
               size="sm"
-              className="border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+              className="border-blue-200 bg-white text-slate-800 hover:bg-blue-100"
               onClick={handleToggleEditProfile}
               type="button"
             >
@@ -207,7 +254,7 @@ function HomePage() {
           </div>
 
           {profileStatus === "loading" ? (
-            <p className="text-sm text-zinc-400">Loading profile...</p>
+            <p className="text-sm text-slate-500">Loading profile...</p>
           ) : null}
 
           {profile && !isEditingProfile ? (
@@ -219,8 +266,8 @@ function HomePage() {
                 className="h-20 w-20"
               />
               <p className="text-xl font-semibold">{profile.name}</p>
-              <p className="text-sm text-zinc-400">@{profile.username}</p>
-              <p className="text-sm text-zinc-300">{profile.bio || "No bio yet."}</p>
+              <p className="text-sm text-slate-500">@{profile.username}</p>
+              <p className="text-sm text-slate-600">{profile.bio || "No bio yet."}</p>
             </div>
           ) : null}
 
@@ -231,32 +278,32 @@ function HomePage() {
                 onChange={(e) =>
                   setProfileForm((prev) => ({ ...prev, username: e.target.value }))
                 }
-                className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-blue-200 bg-slate-100 px-3 py-2 text-sm"
                 placeholder="Username"
               />
               <input
                 value={profileForm.name}
                 onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))}
-                className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-blue-200 bg-slate-100 px-3 py-2 text-sm"
                 placeholder="Full Name"
               />
               <div className="space-y-2">
-                <label className="text-xs text-zinc-400">Profile Photo</label>
+                <label className="text-xs text-slate-500">Profile Photo</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setProfileAvatarFile(e.target.files?.[0] || null)}
-                  className="w-full text-xs text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-2 file:text-white"
+                  className="w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-blue-500 file:px-3 file:py-2 file:text-white"
                 />
                 {profileAvatarFile ? (
-                  <p className="text-xs text-zinc-400">Selected: {profileAvatarFile.name}</p>
+                  <p className="text-xs text-slate-500">Selected: {profileAvatarFile.name}</p>
                 ) : null}
               </div>
               <textarea
                 value={profileForm.bio}
                 onChange={(e) => setProfileForm((prev) => ({ ...prev, bio: e.target.value }))}
                 rows={3}
-                className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-blue-200 bg-slate-100 px-3 py-2 text-sm"
                 placeholder="Bio"
               />
               {profileSubmitError ? (
@@ -264,12 +311,55 @@ function HomePage() {
               ) : null}
               <Button
                 type="submit"
-                className="w-full rounded-full bg-green-600 text-white hover:bg-green-500"
+                className="w-full rounded-full bg-blue-500 text-white hover:bg-blue-600"
               >
                 Save Profile
               </Button>
             </form>
           ) : null}
+          </section>
+
+          <section className="mt-4 rounded-2xl border border-blue-200 bg-white/80 p-4">
+            <h3 className="mb-3 text-lg font-semibold">Suggested for you</h3>
+            {suggestedError ? (
+              <p className="mb-3 text-sm text-red-400">{suggestedError}</p>
+            ) : null}
+            {isSuggestedLoading ? (
+              <p className="text-sm text-slate-500">Loading suggestions...</p>
+            ) : null}
+            {!isSuggestedLoading && suggestedUsers.length === 0 ? (
+              <p className="text-sm text-slate-500">Belum ada user lain untuk direkomendasikan.</p>
+            ) : null}
+            <div className="space-y-3">
+              {suggestedUsers.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <UserAvatar
+                      src={item.avatar}
+                      name={item.name}
+                      seed={item.username}
+                      className="h-9 w-9"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{item.name}</p>
+                      <p className="truncate text-xs text-slate-500">@{item.username}</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={item.is_following ? "outline" : "default"}
+                    className={
+                      item.is_following
+                        ? "border-blue-200 bg-white text-slate-800 hover:bg-blue-100"
+                        : "bg-blue-500 text-white hover:bg-blue-600"
+                    }
+                    onClick={() => void handleToggleSuggestedFollow(item.id, item.is_following)}
+                  >
+                    {item.is_following ? "Following" : "Follow"}
+                  </Button>
+                </div>
+              ))}
+            </div>
           </section>
         </aside>
       </section>
@@ -278,3 +368,4 @@ function HomePage() {
 }
 
 export default HomePage;
+

@@ -8,6 +8,13 @@ type SearchUsersResponse = {
   };
 };
 
+type SuggestedUsersResponse = {
+  status: "success" | "error";
+  data: {
+    users: SearchUserItem[];
+  };
+};
+
 export const searchUsersRequest = async (query: string) => {
   const response = await api.get<SearchUsersResponse>("/users/search", {
     params: {
@@ -17,3 +24,7 @@ export const searchUsersRequest = async (query: string) => {
   return response.data;
 };
 
+export const getSuggestedUsersRequest = async () => {
+  const response = await api.get<SuggestedUsersResponse>("/users/suggested");
+  return response.data;
+};

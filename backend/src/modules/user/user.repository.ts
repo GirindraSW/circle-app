@@ -49,3 +49,22 @@ export const findFollowingIdsForUsers = async (currentUserId: string, targetUser
   });
 };
 
+export const findSuggestedUsers = async (currentUserId: string, limit: number) => {
+  return prisma.user.findMany({
+    where: {
+      id: {
+        not: currentUserId,
+      },
+    },
+    select: {
+      id: true,
+      username: true,
+      full_name: true,
+      photo_profile: true,
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+    take: limit,
+  });
+};

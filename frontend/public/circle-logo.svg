@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
   <circle cx="100" cy="100" r="92" stroke="#B7D4F9" stroke-width="2.5" />
   <circle cx="100" cy="100" r="74" stroke="#7DB4F6" stroke-width="4" />
-  <circle cx="100" cy="100" r="50" fill="url(#g)" />
+  <circle cx="100" cy="100" r="50" fill="url(#circle-gradient)" />
   <path
     d="M99.5 83c-9.5 0-17 7.7-17 17.1 0 9.4 7.5 17.1 17 17.1 9.4 0 17-7.7 17-17.1h-8.3c0 4.9-3.9 8.8-8.7 8.8-4.9 0-8.8-3.9-8.8-8.8s3.9-8.8 8.8-8.8V83Z"
     fill="#E6F0FD"
@@ -11,7 +11,7 @@
   <circle cx="55" cy="149" r="4.8" fill="#9AC6F8" />
   <circle cx="155" cy="139" r="6" fill="#7DB4F6" />
   <defs>
-    <linearGradient id="g" x1="60" y1="50" x2="143" y2="151" gradientUnits="userSpaceOnUse">
+    <linearGradient id="circle-gradient" x1="60" y1="50" x2="143" y2="151" gradientUnits="userSpaceOnUse">
       <stop stop-color="#69A8F2" />
       <stop offset="1" stop-color="#3F85E9" />
     </linearGradient>

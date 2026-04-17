@@ -16,14 +16,14 @@ export default function ProfilePreviewCard() {
 
   if (!profile) {
     return (
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
-        <p className="text-sm text-zinc-400">Loading profile...</p>
+      <section className="rounded-2xl border border-blue-200 bg-white/80 p-4">
+        <p className="text-sm text-slate-500">Loading profile...</p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+    <section className="rounded-2xl border border-blue-200 bg-white/80 p-4">
       <h3 className="mb-3 text-lg font-semibold">My Profile</h3>
       <div className="space-y-2">
         <UserAvatar
@@ -33,10 +33,11 @@ export default function ProfilePreviewCard() {
           className="h-16 w-16"
         />
         <p className="text-xl font-semibold">{profile.name}</p>
-        <p className="text-sm text-zinc-400">@{profile.username}</p>
-        <p className="text-sm text-zinc-300">{profile.bio || "No bio yet."}</p>
+        <p className="text-sm text-slate-500">@{profile.username}</p>
+        <p className="text-sm text-slate-600">{profile.bio || "No bio yet."}</p>
       </div>
     </section>
   );
 }
+
 
