@@ -172,6 +172,80 @@ export const findThreadExistence = async (threadId: string) => {
   });
 };
 
+export const findThreadOwnerById = async (threadId: string) => {
+  return prisma.thread.findUnique({
+    where: {
+      id: threadId,
+    },
+    select: {
+      id: true,
+      created_by: true,
+    },
+  });
+};
+
+export const updateThreadRecord = async (payload: {
+  threadId: string;
+  content: string;
+  userId: string;
+}) => {
+  return prisma.thread.update({
+    where: {
+      id: payload.threadId,
+    },
+    data: {
+      content: payload.content,
+      updated_by: payload.userId,
+    },
+    include: {
+      created_by_user: {
+        select: {
+          id: true,
+          username: true,
+          full_name: true,
+          photo_profile: true,
+        },
+      },
+      likes: {
+        where: {
+          user_id: payload.userId,
+        },
+        select: {
+          id: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+  });
+};
+
+export const deleteThreadRecord = async (threadId: string) => {
+  return prisma.$transaction(async (tx) => {
+    await tx.like.deleteMany({
+      where: {
+        thread_id: threadId,
+      },
+    });
+
+    await tx.reply.deleteMany({
+      where: {
+        thread_id: threadId,
+      },
+    });
+
+    return tx.thread.delete({
+      where: {
+        id: threadId,
+      },
+    });
+  });
+};
+
 export const findLikeByUserAndThread = async (userId: string, threadId: string) => {
   return prisma.like.findUnique({
     where: {

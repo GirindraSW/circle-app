@@ -1,11 +1,10 @@
-import { LogOut } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
+import AppSidebar from "../components/AppSidebar";
 import { Button } from "../components/ui/button";
 import UserAvatar from "../components/UserAvatar";
-import { logout } from "../features/auth/authSlice";
-import { clearProfile, fetchProfile, updateProfile } from "../features/profile/profileSlice";
+import { fetchProfile, updateProfile } from "../features/profile/profileSlice";
 import ThreadList from "../features/thread/components/ThreadList";
 import { useThreads } from "../features/thread/hooks/useThreads";
 
@@ -15,8 +14,17 @@ function HomePage() {
   const user = useAppSelector((state) => state.auth.user);
   const profile = useAppSelector((state) => state.profile.data);
   const profileStatus = useAppSelector((state) => state.profile.status);
-  const { threads, isLoading, isPosting, toggleLike, createThread, errorMessage } =
-    useThreads();
+  const {
+    threads,
+    isLoading,
+    isPosting,
+    toggleLike,
+    createThread,
+    editThread,
+    deleteThread,
+    currentUserId,
+    errorMessage,
+  } = useThreads();
   const [content, setContent] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [submitError, setSubmitError] = useState("");
@@ -34,11 +42,6 @@ function HomePage() {
       void dispatch(fetchProfile());
     }
   }, [dispatch, profileStatus]);
-
-  const handleLogout = () => {
-    dispatch(logout());
-    dispatch(clearProfile());
-  };
 
   const handleThreadClick = (threadId: string) => {
     navigate(`/thread/${threadId}`);
@@ -59,6 +62,37 @@ function HomePage() {
       setSelectedImage(null);
     } catch {
       setSubmitError("Gagal mengirim thread.");
+    }
+  };
+
+  const handleEditThread = async (threadId: string, previousContent: string) => {
+    const nextContent = window.prompt("Edit thread kamu:", previousContent);
+    if (nextContent === null) return;
+
+    if (!nextContent.trim()) {
+      setSubmitError("Isi thread tidak boleh kosong.");
+      return;
+    }
+
+    setSubmitError("");
+
+    try {
+      await editThread(threadId, nextContent);
+    } catch {
+      setSubmitError("Gagal update thread.");
+    }
+  };
+
+  const handleDeleteThread = async (threadId: string) => {
+    const confirmed = window.confirm("Yakin ingin menghapus thread ini?");
+    if (!confirmed) return;
+
+    setSubmitError("");
+
+    try {
+      await deleteThread(threadId);
+    } catch {
+      setSubmitError("Gagal hapus thread.");
     }
   };
 
@@ -96,77 +130,69 @@ function HomePage() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <section className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 sm:grid-cols-[2fr_1fr] sm:px-6">
-        <div>
-        <header className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-green-500">circle</h1>
+      <section className="mx-auto grid max-w-[1300px] lg:grid-cols-[240px_minmax(0,1fr)_320px]">
+        <AppSidebar />
+
+        <section className="min-h-screen border-x border-zinc-800 px-4 py-6 sm:px-6">
+          <header className="mb-6">
+            <h2 className="text-2xl font-semibold">Home</h2>
             <p className="text-sm text-zinc-400">
               Welcome, {profile?.name || profile?.username || user?.name || user?.username || "User"}
             </p>
-            <Link to="/follows?type=followers" className="text-xs text-zinc-400 hover:text-zinc-100">
-              Open Follows
-            </Link>
-          </div>
-          <Button
-            variant="outline"
-            className="border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
-            onClick={handleLogout}
+          </header>
+
+          <form
+            onSubmit={handleSubmitThread}
+            className="mb-5 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4"
           >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
-        </header>
-
-        <h2 className="mb-4 text-xl font-semibold">Home</h2>
-        <form
-          onSubmit={handleSubmitThread}
-          className="mb-5 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4"
-        >
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={3}
-            placeholder="What is happening?!"
-            className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-500"
-          />
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
-              className="text-xs text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-2 file:text-white"
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={3}
+              placeholder="What is happening?!"
+              className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-500"
             />
-            <Button
-              type="submit"
-              disabled={isPosting}
-              className="rounded-full bg-green-600 text-white hover:bg-green-500"
-            >
-              {isPosting ? "Posting..." : "Reply"}
-            </Button>
-          </div>
-          {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}
-        </form>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
+                className="text-xs text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-2 file:text-white"
+              />
+              <Button
+                type="submit"
+                disabled={isPosting}
+                className="rounded-full bg-green-600 text-white hover:bg-green-500"
+              >
+                {isPosting ? "Posting..." : "Reply"}
+              </Button>
+            </div>
+            {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}
+          </form>
 
-        {errorMessage ? (
-          <p className="mb-4 rounded-xl border border-amber-700/40 bg-amber-950/30 p-3 text-sm text-amber-300">
-            {errorMessage}
-          </p>
-        ) : null}
-        {isLoading ? (
-          <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-zinc-400">
-            Loading threads...
-          </p>
-        ) : (
-          <ThreadList
-            threads={threads}
-            onToggleLike={toggleLike}
-            onThreadClick={handleThreadClick}
-          />
-        )}
-        </div>
+          {errorMessage ? (
+            <p className="mb-4 rounded-xl border border-amber-700/40 bg-amber-950/30 p-3 text-sm text-amber-300">
+              {errorMessage}
+            </p>
+          ) : null}
+          {isLoading ? (
+            <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-zinc-400">
+              Loading threads...
+            </p>
+          ) : (
+            <ThreadList
+              threads={threads}
+              onToggleLike={toggleLike}
+              onEditThread={(thread) => handleEditThread(thread.id, thread.content)}
+              onDeleteThread={(thread) => handleDeleteThread(thread.id)}
+              currentUserId={currentUserId || user?.user_id}
+              onThreadClick={handleThreadClick}
+            />
+          )}
+        </section>
 
-        <aside className="h-fit rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+        <aside className="h-fit p-4">
+          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-semibold">My Profile</h3>
             <Button
@@ -244,6 +270,7 @@ function HomePage() {
               </Button>
             </form>
           ) : null}
+          </section>
         </aside>
       </section>
     </main>

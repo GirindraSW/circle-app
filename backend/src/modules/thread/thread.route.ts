@@ -2,6 +2,8 @@ import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { uploadImage } from "../../middlewares/upload.middleware.js";
 import {
+  putThread,
+  removeThread,
   deleteLike,
   getRepliesByThreadId,
   getRepliesByThreadIdQuery,
@@ -17,6 +19,8 @@ const threadRouter = Router();
 threadRouter.get("/", authMiddleware, getThreads);
 threadRouter.post("/", authMiddleware, uploadImage.single("image"), postThread);
 threadRouter.get("/:threadId", authMiddleware, getThreadById);
+threadRouter.put("/:threadId", authMiddleware, putThread);
+threadRouter.delete("/:threadId", authMiddleware, removeThread);
 threadRouter.get("/:threadId/replies", authMiddleware, getRepliesByThreadId);
 
 const replyRouter = Router();

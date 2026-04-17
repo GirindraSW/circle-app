@@ -1,4 +1,4 @@
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAppSelector } from "@/app/hooks";
@@ -8,10 +8,20 @@ import type { ThreadItem } from "../types/thread.type";
 type ThreadCardProps = {
   thread: ThreadItem;
   onToggleLike: (threadId: string) => void | Promise<void>;
+  onEditThread: (thread: ThreadItem) => void | Promise<void>;
+  onDeleteThread: (thread: ThreadItem) => void | Promise<void>;
+  isOwner?: boolean;
   onClick?: (threadId: string) => void;
 };
 
-export default function ThreadCard({ thread, onToggleLike, onClick }: ThreadCardProps) {
+export default function ThreadCard({
+  thread,
+  onToggleLike,
+  onEditThread,
+  onDeleteThread,
+  isOwner,
+  onClick,
+}: ThreadCardProps) {
   const likeState = useAppSelector((state) => state.like.byThreadId[thread.id]);
   const liked = likeState?.liked ?? thread.liked;
   const likeCount = likeState?.likeCount ?? thread.likeCount;
@@ -66,6 +76,36 @@ export default function ThreadCard({ thread, onToggleLike, onClick }: ThreadCard
           <span className="text-zinc-400">{likeCount}</span>
           <MessageCircle className="ml-2 h-4 w-4 text-zinc-400" />
           <span className="text-zinc-400">{thread.replyCount}</span>
+          {isOwner ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void onEditThread(thread);
+                }}
+                type="button"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-red-700 bg-zinc-900 text-red-300 hover:bg-red-950/30"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void onDeleteThread(thread);
+                }}
+                type="button"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </>
+          ) : null}
         </div>
       </CardContent>
     </Card>

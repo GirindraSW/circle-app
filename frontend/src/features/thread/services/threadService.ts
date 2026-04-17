@@ -59,6 +59,19 @@ type CreateThreadResponse = {
   data: ThreadApiItem;
 };
 
+type UpdateThreadResponse = {
+  code: number;
+  status: string;
+  message: string;
+  data: ThreadApiItem;
+};
+
+type DeleteThreadResponse = {
+  code: number;
+  status: string;
+  message: string;
+};
+
 type GetThreadDetailResponse = {
   code: number;
   status: string;
@@ -106,6 +119,18 @@ export const getThreadDetailRequest = async (threadId: string) => {
 
 export const getThreadRepliesRequest = async (threadId: string) => {
   const response = await api.get<GetThreadRepliesResponse>(`/thread/${threadId}/replies`);
+  return response.data;
+};
+
+export const updateThreadRequest = async (threadId: string, content: string) => {
+  const response = await api.put<UpdateThreadResponse>(`/thread/${threadId}`, {
+    content,
+  });
+  return response.data;
+};
+
+export const deleteThreadRequest = async (threadId: string) => {
+  const response = await api.delete<DeleteThreadResponse>(`/thread/${threadId}`);
   return response.data;
 };
 

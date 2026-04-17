@@ -3,6 +3,8 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import FollowsPage from "./pages/FollowsPage";
+import SearchPage from "./pages/SearchPage";
+import ProfilePage from "./pages/ProfilePage";
 import ThreadDetailPage from "./pages/ThreadDetailPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import "./App.css";
@@ -34,6 +36,22 @@ function App() {
         element={
           <ProtectedRoute>
             <FollowsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/search"
+        element={
+          <ProtectedRoute>
+            <SearchPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />

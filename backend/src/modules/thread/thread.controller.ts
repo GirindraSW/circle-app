@@ -3,11 +3,13 @@ import { AuthenticatedRequest } from "../../middlewares/auth.middleware.js";
 import {
   createThread,
   createReply,
+  deleteThread,
   getThreadDetail,
   getThreadList,
   getThreadReplies,
   likeThread,
   unlikeThread,
+  updateThread,
 } from "./thread.service.js";
 
 export const getThreads = async (req: Request, res: Response) => {
@@ -70,6 +72,137 @@ export const postThread = async (req: Request, res: Response) => {
       code: 500,
       status: "error",
       message: "Failed to create thread.",
+    });
+  }
+};
+
+export const putThread = async (req: Request, res: Response) => {
+  const authReq = req as AuthenticatedRequest;
+  const currentUserId = authReq.user?.user_id;
+  const threadId = Array.isArray(req.params.threadId)
+    ? req.params.threadId[0]
+    : req.params.threadId;
+  const { content } = authReq.body as { content?: string };
+
+  if (!currentUserId) {
+    return res.status(401).json({
+      code: 401,
+      status: "error",
+      message: "Unauthorized",
+    });
+  }
+
+  if (!threadId) {
+    return res.status(400).json({
+      code: 400,
+      status: "error",
+      message: "threadId is required",
+    });
+  }
+
+  if (!content || content.trim().length === 0 || content.length > 500) {
+    return res.status(400).json({
+      code: 400,
+      status: "error",
+      message: "Invalid thread content.",
+    });
+  }
+
+  try {
+    const thread = await updateThread({
+      threadId,
+      userId: currentUserId,
+      content: content.trim(),
+    });
+
+    return res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Thread berhasil diupdate.",
+      data: thread,
+    });
+  } catch (error) {
+    const errorCode = error instanceof Error ? error.message : "";
+    if (errorCode === "THREAD_NOT_FOUND") {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Thread not found",
+      });
+    }
+
+    if (errorCode === "FORBIDDEN") {
+      return res.status(403).json({
+        code: 403,
+        status: "error",
+        message: "Forbidden",
+      });
+    }
+
+    return res.status(500).json({
+      code: 500,
+      status: "error",
+      message: "Failed to update thread.",
+    });
+  }
+};
+
+export const removeThread = async (req: Request, res: Response) => {
+  const authReq = req as AuthenticatedRequest;
+  const currentUserId = authReq.user?.user_id;
+  const threadId = Array.isArray(req.params.threadId)
+    ? req.params.threadId[0]
+    : req.params.threadId;
+
+  if (!currentUserId) {
+    return res.status(401).json({
+      code: 401,
+      status: "error",
+      message: "Unauthorized",
+    });
+  }
+
+  if (!threadId) {
+    return res.status(400).json({
+      code: 400,
+      status: "error",
+      message: "threadId is required",
+    });
+  }
+
+  try {
+    await deleteThread({
+      threadId,
+      userId: currentUserId,
+    });
+
+    return res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Thread berhasil dihapus.",
+    });
+  } catch (error) {
+    const errorCode = error instanceof Error ? error.message : "";
+    if (errorCode === "THREAD_NOT_FOUND") {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Thread not found",
+      });
+    }
+
+    if (errorCode === "FORBIDDEN") {
+      return res.status(403).json({
+        code: 403,
+        status: "error",
+        message: "Forbidden",
+      });
+    }
+
+    return res.status(500).json({
+      code: 500,
+      status: "error",
+      message: "Failed to delete thread.",
     });
   }
 };

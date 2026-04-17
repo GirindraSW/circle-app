@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import {
   createThreadRequest,
+  deleteThreadRequest,
   getThreadsRequest,
   likeThreadRequest,
   type ThreadApiItem,
+  updateThreadRequest,
   unlikeThreadRequest,
 } from "../services/threadService";
 import type { ThreadItem } from "../types/thread.type";
@@ -53,6 +55,7 @@ const DUMMY_THREADS: ThreadItem[] = [
 
 export function useThreads() {
   const dispatch = useAppDispatch();
+  const currentUserId = useAppSelector((state) => state.auth.user?.user_id);
   const likeByThreadId = useAppSelector((state) => state.like.byThreadId);
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -179,7 +182,50 @@ export function useThreads() {
     }
   };
 
-  return { threads, isLoading, isPosting, toggleLike, createThread, errorMessage };
+  const editThread = async (threadId: string, content: string) => {
+    const sanitizedContent = content.trim();
+    if (!sanitizedContent) {
+      setErrorMessage("Konten thread tidak boleh kosong.");
+      return;
+    }
+
+    setErrorMessage("");
+
+    try {
+      const result = await updateThreadRequest(threadId, sanitizedContent);
+      const mapped = mapThreadFromApi(result.data);
+      setThreads((prev) =>
+        prev.map((item) => (item.id === threadId ? { ...item, ...mapped } : item)),
+      );
+    } catch {
+      setErrorMessage("Gagal update thread.");
+      throw new Error("UPDATE_THREAD_FAILED");
+    }
+  };
+
+  const deleteThread = async (threadId: string) => {
+    setErrorMessage("");
+
+    try {
+      await deleteThreadRequest(threadId);
+      setThreads((prev) => prev.filter((item) => item.id !== threadId));
+    } catch {
+      setErrorMessage("Gagal hapus thread.");
+      throw new Error("DELETE_THREAD_FAILED");
+    }
+  };
+
+  return {
+    threads,
+    isLoading,
+    isPosting,
+    toggleLike,
+    createThread,
+    editThread,
+    deleteThread,
+    currentUserId,
+    errorMessage,
+  };
 }
 
 const formatThreadDate = (value: string) => {
@@ -200,6 +246,7 @@ const formatThreadDate = (value: string) => {
 
 const mapThreadFromApi = (thread: ThreadApiItem): ThreadItem => ({
   id: thread.id,
+  authorId: thread.author.id,
   authorName: thread.author.name,
   authorUsername: thread.author.username,
   authorAvatar: thread.author.avatar || undefined,

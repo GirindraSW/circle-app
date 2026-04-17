@@ -1,5 +1,6 @@
 export type ThreadItem = {
   id: string;
+  authorId?: string | null;
   authorName: string;
   authorUsername: string;
   authorAvatar?: string;

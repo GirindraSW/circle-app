@@ -4,12 +4,15 @@ import {
   createLikeRecord,
   createReplyRecord,
   createThreadRecord,
+  deleteThreadRecord,
   deleteLikeRecord,
   findAllThreads,
   findLikeByUserAndThread,
+  findThreadOwnerById,
   findRepliesByThreadId,
   findThreadExistence,
   findThreadById,
+  updateThreadRecord,
 } from "./thread.repository.js";
 import type {
   CreateThreadInput,
@@ -39,6 +42,37 @@ export const createThread = async (payload: CreateThreadInput): Promise<ThreadLi
   broadcastThreadCreated(mappedThread);
 
   return mappedThread;
+};
+
+export const updateThread = async (payload: {
+  threadId: string;
+  userId: string;
+  content: string;
+}): Promise<ThreadListItem> => {
+  const threadOwner = await findThreadOwnerById(payload.threadId);
+  if (!threadOwner) {
+    throw new Error("THREAD_NOT_FOUND");
+  }
+
+  if (threadOwner.created_by !== payload.userId) {
+    throw new Error("FORBIDDEN");
+  }
+
+  const updatedThread = await updateThreadRecord(payload);
+  return mapThreadEntity(updatedThread);
+};
+
+export const deleteThread = async (payload: { threadId: string; userId: string }) => {
+  const threadOwner = await findThreadOwnerById(payload.threadId);
+  if (!threadOwner) {
+    throw new Error("THREAD_NOT_FOUND");
+  }
+
+  if (threadOwner.created_by !== payload.userId) {
+    throw new Error("FORBIDDEN");
+  }
+
+  return deleteThreadRecord(payload.threadId);
 };
 
 export const createReply = async (payload: {
